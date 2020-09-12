@@ -2,7 +2,8 @@ const Shell = require('child_process');
 const DateFormat = require('moment');
 const Net = require('net');
 const Crypto = require('crypto');
-const fs = require('fs');
+const Path = require('path');
+const Fs = require('fs');
 const NumberFormat = new Intl.NumberFormat();
 
 const APP_NAME = 'Simple Proxy v1.0.0';
@@ -123,11 +124,13 @@ const forwardPort = (sourcePort, ip, targetPort) => {
 }
 
 async function main() {
+    var fileName = Path.resolve(__dirname, 'proxy-config.json');
     consoleLog(APP_NAME);
-    if (fs.existsSync('proxy-config.json')) {
-        const fd = fs.openSync('proxy-config.json');
-        var text = fs.readFileSync(fd, 'utf-8');
-        fs.closeSync(fd);
+    consoleLog('Loading config from '+fileName);
+    if (Fs.existsSync(fileName)) {
+        const fd = Fs.openSync(fileName);
+        var text = Fs.readFileSync(fd, 'utf-8');
+        Fs.closeSync(fd);
         var json = JSON.parse(text);
         var command = json['discovery']['command'];
         var tag = json['discovery']['tag'];
