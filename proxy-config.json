@@ -1,0 +1,9 @@
+{
+  "discovery": {
+    "command": "multipass exec main ifconfig eth0",
+    "tag": "inet",
+    "index": 1
+  },
+  "source_port": 22,
+  "target_port": 22
+}
