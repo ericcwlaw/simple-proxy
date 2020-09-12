@@ -1,6 +1,6 @@
 # Simple TCP socket proxy
 
-This proxy was originally designed to allow a user to ssh into a Ubuntu multipass VM from the host machine or the Internet.
+This proxy was originally designed to allow me to ssh into a Ubuntu multipass VM from the host machine or the Internet.
 
 I am amazed about the simplicity and performance of the proxy, thus polishing it to become a generic socket proxy that you can use to do network address translation (NAT) from a host port to a guest VM target IP and port.
 
