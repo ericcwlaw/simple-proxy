@@ -44,7 +44,23 @@ async function getVmIpAddress(command, key, index) {
     });
 }
 
-const forwardPort = (sourcePort, ip, targetPort) => {
+const isAuthorized = (remoteIp, authorized) => {
+    if (authorized.includes(remoteIp)) {
+        return true;
+    }
+    for (i in authorized) {
+        const s = authorized[i];
+        if (s.endsWith('.*')) {
+            const prefix = s.substring(0, s.lastIndexOf('.'));
+            if (remoteIp.startsWith(prefix+'.')) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+const forwardPort = (sourcePort, ip, targetPort, authorized) => {
     const connections = new Map();
     // Setup TCP socket server
     const server = new Net.Server();
@@ -71,11 +87,18 @@ const forwardPort = (sourcePort, ip, targetPort) => {
     });
     // Start TCP socket server
     server.on('connection', (socket) => {
+        // check remote address
+        const remoteIp = socket.remoteAddress;
+        if (!isAuthorized(remoteIp, authorized)) {
+            consoleLog("Unknown caller "+remoteIp+" connection to "+targetPort+" rejected");
+            socket.end();
+            return;
+        }
         var normal = true;
         const sessionId = (ZEROES + Crypto.randomBytes(4).readUIntBE(0, 4) % 1000000).slice(-6);
         const client = Net.createConnection({ port: targetPort, host: ip }, () => {
             connections.set(sessionId, client);
-            consoleLog( 'Session ' + sessionId + ' connected to ' + socket.remoteAddress +
+            consoleLog( 'Session ' + sessionId + ', port-' + targetPort + ' connected to ' + socket.remoteAddress + 
                         ' sessions=' + connections.size );
         });
         socket.on('data', (data) => {
@@ -91,7 +114,7 @@ const forwardPort = (sourcePort, ip, targetPort) => {
         client.once('end', () => {
             socket.end();
             connections.delete(sessionId);
-            consoleLog( 'Session '+sessionId+' disconnected from ' + socket.remoteAddress +
+            consoleLog( 'Session '+sessionId+ ', port-' + targetPort + ' disconnected from ' + socket.remoteAddress +
                         ' rx=' + NumberFormat.format(socket.bytesRead) +
                         ' tx=' + NumberFormat.format(socket.bytesWritten) + ' sessions='+connections.size );
         });
@@ -129,29 +152,28 @@ async function main() {
     consoleLog('Loading config from '+fileName);
     if (Fs.existsSync(fileName)) {
         const fd = Fs.openSync(fileName);
-        var text = Fs.readFileSync(fd, 'utf-8');
+        const text = Fs.readFileSync(fd, 'utf-8');
         Fs.closeSync(fd);
-        var json = JSON.parse(text);
-        var command = json['discovery']['command'];
-        var tag = json['discovery']['tag'];
-        var index = json['discovery']['index'];
-        var source_port = json['source_port'];
-        var target_port = json['target_port'];
-        if (command && tag && index && source_port && target_port) {
-            if (await portReady('127.0.0.1', source_port)) {
-                consoleLog('Port-'+source_port+' is already used');
+        const json = JSON.parse(text);
+        const command = json['discovery']['command'];
+        const tag = json['discovery']['tag'];
+        const index = json['discovery']['index'];
+        const authorized = json['authorized'];
+        consoleLog("Authorized users "+JSON.stringify(authorized));
+        const source_ports = json['source_ports'];
+        const target_ports = json['target_ports'];
+        if (command && tag && index && source_ports && target_ports) {
+            if (source_ports.length != target_ports.length) {
+                consoleLog('Invalid proxy-config.json');
             } else {
-                consoleLog('Port-'+source_port+' is available');
                 // Obtain dynamic IP address - this assumes we are using multipass and the VM is called "main"
                 const [valid, result] = await getVmIpAddress(command, tag, index);
-                if (valid) {
-                    if (await portReady(result, target_port)) {
-                        forwardPort(source_port, result, target_port);
-                    } else {
-                        consoleLog('Target '+result+':'+target_port+' does not respond');
-                    }
-                } else {
+                if (!valid) {
                     consoleLog('Unable to obtain target IP address - '+result);
+                } else {
+                    for (i in source_ports) {
+                        forwardPort(source_ports[i], result, target_ports[i], authorized);
+                    }
                 }
             }
         } else {

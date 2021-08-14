@@ -15,8 +15,9 @@ The IP discovery command, source and target ports are configurable using a JSON 
     "tag": "inet",
     "index": 1
   },
-  "source_port": 22,
-  "target_port": 22
+  "source_port": [22],
+  "target_port": [22],
+  "authorized": ["192.168.1.*"]
 }
 ```
 
@@ -48,4 +49,4 @@ npm install moment
 
 Hope you enjoy this utility for your projects.
 
-9/12/2020
+8/2021
