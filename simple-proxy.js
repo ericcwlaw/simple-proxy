@@ -60,7 +60,7 @@ const isAuthorized = (remoteIp, authorized) => {
     return false;
 }
 
-const forwardPort = (sourcePort, ip, targetPort, authorized) => {
+const forwardPort = (sourcePort, ip, targetPort, authorized, restart) => {
     const connections = new Map();
     // Setup TCP socket server
     const server = new Net.Server();
@@ -127,20 +127,19 @@ const forwardPort = (sourcePort, ip, targetPort, authorized) => {
                 // normal case when user is using Windows
                 consoleLog('Session '+sessionId+' closed by '+remoteIp);
             } else {
-                consoleLog('Exception ('+remoteIp+') - '+err.code);
+                consoleLog('Session '+sessionId+' exception ('+remoteIp+') - '+err.code);
             }
         });
         client.on('error', (err) => {
             normal = false;
             socket.end();
             client.end();
+            consoleLog('Exception for port-'+targetPort+' - '+err);
             // Caution: the error message may depend on locale and language
-            if (err.message.startsWith('connect ETIMEDOUT')) {
+            if (err.message.startsWith('connect ETIMEDOUT') && targetPort == restart) {
                 // Let process manager to restart this app
-                consoleLog('Stopping application because target does not respond');
+                consoleLog('Stopping application because port-'+targetPort+' does not respond');
                 process.exit(1);
-            } else {
-                consoleLog('Exception ('+ip+') - '+err);
             }
         });
     });
@@ -159,6 +158,7 @@ async function main() {
         const tag = json['discovery']['tag'];
         const index = json['discovery']['index'];
         const authorized = json['authorized'];
+        const restart = json['restart'];
         consoleLog("Authorized users "+JSON.stringify(authorized));
         const source_ports = json['source_ports'];
         const target_ports = json['target_ports'];
@@ -172,7 +172,7 @@ async function main() {
                     consoleLog('Unable to obtain target IP address - '+result);
                 } else {
                     for (i in source_ports) {
-                        forwardPort(source_ports[i], result, target_ports[i], authorized);
+                        forwardPort(source_ports[i], result, target_ports[i], authorized, restart);
                     }
                 }
             }
