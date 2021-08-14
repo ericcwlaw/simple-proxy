@@ -98,14 +98,14 @@ const forwardPort = (sourcePort, ip, targetPort, authorized) => {
         const sessionId = (ZEROES + Crypto.randomBytes(4).readUIntBE(0, 4) % 1000000).slice(-6);
         const client = Net.createConnection({ port: targetPort, host: ip }, () => {
             connections.set(sessionId, client);
-            consoleLog( 'Session ' + sessionId + ', port-' + targetPort + ' connected to ' + socket.remoteAddress + 
-                        ' sessions=' + connections.size );
+            consoleLog( 'Session ' + sessionId + ' ' + remoteIp + ' connected to ' + ip + 
+                        ':'+targetPort +' sessions=' + connections.size );
         });
         socket.on('data', (data) => {
             if (normal) client.write(data);
         });
         socket.once('end', () => {
-            consoleLog('Session '+sessionId+' closed by '+socket.remoteAddress);
+            consoleLog('Session '+sessionId+' closed by '+remoteIp);
             client.end();
         });
         client.on('data', (data) => {
@@ -114,7 +114,7 @@ const forwardPort = (sourcePort, ip, targetPort, authorized) => {
         client.once('end', () => {
             socket.end();
             connections.delete(sessionId);
-            consoleLog( 'Session '+sessionId+ ', port-' + targetPort + ' disconnected from ' + socket.remoteAddress +
+            consoleLog( 'Session '+sessionId+ ' ' + remoteIp + ' disconnected from ' + ip + ':' + targetPort +
                         ' rx=' + NumberFormat.format(socket.bytesRead) +
                         ' tx=' + NumberFormat.format(socket.bytesWritten) + ' sessions='+connections.size );
         });
@@ -125,9 +125,9 @@ const forwardPort = (sourcePort, ip, targetPort, authorized) => {
             socket.end();
             if ('ECONNRESET' == err.code) {
                 // normal case when user is using Windows
-                consoleLog('Session '+sessionId+' closed by '+socket.remoteAddress);
+                consoleLog('Session '+sessionId+' closed by '+remoteIp);
             } else {
-                consoleLog('Exception ('+socket.remoteAddress+') - '+err.code);
+                consoleLog('Exception ('+remoteIp+') - '+err.code);
             }
         });
         client.on('error', (err) => {
