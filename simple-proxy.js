@@ -10,6 +10,8 @@ const APP_NAME = 'Simple Proxy v1.0.0';
 const TIMESTAMP = 'YYYY-MM-DD HH:mm:ss.SSS';
 const ZEROES = '000000';
 const instanceId = (ZEROES + Crypto.randomBytes(4).readUIntBE(0, 4) % 10000).slice(-4);
+const IDLE_TIMEOUT = 300 * 1000;
+var stopping = false;
 
 const consoleLog = (message) => {
     console.log(DateFormat().format(TIMESTAMP)+' ['+instanceId+'] '+message);
@@ -74,15 +76,21 @@ const forwardPort = (sourcePort, ip, targetPort, authorized, restart) => {
             connections.get(k).end();
         }
         server.close(() => {
-            consoleLog('Proxy service stopped');
+            consoleLog('Proxy service port-'+targetPort+' stopped');
         });
     };
     process.on('SIGTERM', () => {
-        consoleLog('Kill signal detected');
+        if (!stopping) {
+            stopping = true;
+            consoleLog('Kill signal detected');
+        }
         gracefulShutdown();
     });
     process.on('SIGINT', () => {
-        consoleLog('Control-C detected');
+        if (!stopping) {
+            stopping = true;
+            consoleLog('Control-C detected');
+        }
         gracefulShutdown();
     });
     // Start TCP socket server
@@ -90,7 +98,7 @@ const forwardPort = (sourcePort, ip, targetPort, authorized, restart) => {
         // check remote address
         const remoteIp = socket.remoteAddress;
         if (!isAuthorized(remoteIp, authorized)) {
-            consoleLog("Unknown caller "+remoteIp+" connection to "+targetPort+" rejected");
+            consoleLog("Unknown caller " + remoteIp + " connection to " + targetPort + " rejected");
             socket.end();
             return;
         }
@@ -100,6 +108,10 @@ const forwardPort = (sourcePort, ip, targetPort, authorized, restart) => {
             connections.set(sessionId, client);
             consoleLog( 'Session ' + sessionId + ' ' + remoteIp + ' connected to ' + ip + 
                         ':'+targetPort +' sessions=' + connections.size );
+        });
+        client.setTimeout(IDLE_TIMEOUT, () => {
+            consoleLog('Session ' + sessionId + ' timeout');
+            socket.end();
         });
         socket.on('data', (data) => {
             if (normal) client.write(data);
@@ -112,28 +124,25 @@ const forwardPort = (sourcePort, ip, targetPort, authorized, restart) => {
             if (normal) socket.write(data);
         });
         client.once('end', () => {
-            socket.end();
             connections.delete(sessionId);
             consoleLog( 'Session '+sessionId+ ' ' + remoteIp + ' disconnected from ' + ip + ':' + targetPort +
                         ' rx=' + NumberFormat.format(socket.bytesRead) +
-                        ' tx=' + NumberFormat.format(socket.bytesWritten) + ' sessions='+connections.size );
+                        ' tx=' + NumberFormat.format(socket.bytesWritten) + ' sessions=' + connections.size);
+            socket.end();
         });
         // Socket exceptions - most likely to be read timeout or connection reset
         socket.on('error', (err) => {
-            normal = false;
-            client.end();
-            socket.end();
             if ('ECONNRESET' == err.code) {
                 // normal case when user is using Windows
                 consoleLog('Session '+sessionId+' closed by '+remoteIp);
             } else {
                 consoleLog('Session '+sessionId+' exception ('+remoteIp+') - '+err.code);
             }
+            normal = false;
+            client.end();
+            socket.end();
         });
         client.on('error', (err) => {
-            normal = false;
-            socket.end();
-            client.end();
             consoleLog('Exception for port-'+targetPort+' - '+err);
             // Caution: the error message may depend on locale and language
             if (err.message.startsWith('connect ETIMEDOUT') && targetPort == restart) {
@@ -141,6 +150,9 @@ const forwardPort = (sourcePort, ip, targetPort, authorized, restart) => {
                 consoleLog('Stopping application because port-'+targetPort+' does not respond');
                 process.exit(1);
             }
+            normal = false;
+            socket.end();
+            client.end();
         });
     });
 }
