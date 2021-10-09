@@ -1,4 +1,4 @@
-i{
+{
   "discovery": {
     "command": "multipass exec main ifconfig eth0",
     "tag": "inet",
