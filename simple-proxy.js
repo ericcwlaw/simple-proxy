@@ -99,7 +99,7 @@ const forwardPort = (sourcePort, ip, targetPort, authorized, restart) => {
         const remoteIp = socket.remoteAddress;
         if (!isAuthorized(remoteIp, authorized)) {
             consoleLog("Unknown caller " + remoteIp + " connection to " + targetPort + " rejected");
-            socket.end();
+            socket.destroy();
             return;
         }
         var normal = true;
