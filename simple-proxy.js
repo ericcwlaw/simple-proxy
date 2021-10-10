@@ -106,8 +106,12 @@ const forwardPort = (sourcePort, ip, targetPort, authorized, restart) => {
         const sessionId = (ZEROES + Crypto.randomBytes(4).readUIntBE(0, 4) % 1000000).slice(-6);
         const client = Net.createConnection({ port: targetPort, host: ip }, () => {
             connections.set(sessionId, client);
-            consoleLog( 'Session ' + sessionId + ' ' + remoteIp + ' connected to ' + ip + 
-                        ':'+targetPort +' sessions=' + connections.size );
+            consoleLog( 'Session ' + sessionId + ' ' + remoteIp + ' connected to ' + ip + ':'+targetPort);
+            server.getConnections((err, count) => {
+                if (!err) {
+                    consoleLog("Total connections = " + count);
+                }
+            });
         });
         client.setTimeout(IDLE_TIMEOUT, () => {
             consoleLog('Session ' + sessionId + ' timeout');
@@ -117,8 +121,14 @@ const forwardPort = (sourcePort, ip, targetPort, authorized, restart) => {
             if (normal) client.write(data);
         });
         socket.once('end', () => {
+            connections.delete(sessionId);
             consoleLog('Session '+sessionId+' closed by '+remoteIp);
             client.end();
+            server.getConnections((err, count) => {
+                if (!err) {
+                    consoleLog("Remaining connections = " + count);
+                }
+            });
         });
         client.on('data', (data) => {
             if (normal) socket.write(data);
@@ -126,9 +136,14 @@ const forwardPort = (sourcePort, ip, targetPort, authorized, restart) => {
         client.once('end', () => {
             connections.delete(sessionId);
             consoleLog( 'Session '+sessionId+ ' ' + remoteIp + ' disconnected from ' + ip + ':' + targetPort +
-                        ' rx=' + NumberFormat.format(socket.bytesRead) +
-                        ' tx=' + NumberFormat.format(socket.bytesWritten) + ' sessions=' + connections.size);
+                        ' rx ' + NumberFormat.format(socket.bytesRead) +
+                        ' tx ' + NumberFormat.format(socket.bytesWritten));
             socket.end();
+            server.getConnections((err, count) => {
+                if (!err) {
+                    consoleLog("Remaining connections = " + count);
+                }
+            });
         });
         // Socket exceptions - most likely to be read timeout or connection reset
         socket.on('error', (err) => {
