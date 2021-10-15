@@ -108,7 +108,9 @@ const forwardPort = (sourcePort, ip, targetPort, authorized, restart) => {
             connections.set(sessionId, client);
             consoleLog( 'Session ' + sessionId + ' ' + remoteIp + ' connected to ' + ip + ':'+targetPort);
             server.getConnections((err, count) => {
-                if (!err) {
+                if (err) {
+                    consoleLog(err.message);
+                } else {
                     consoleLog("Total connections = " + count);
                 }
             });
@@ -125,7 +127,9 @@ const forwardPort = (sourcePort, ip, targetPort, authorized, restart) => {
             consoleLog('Session '+sessionId+' closed by '+remoteIp);
             client.end();
             server.getConnections((err, count) => {
-                if (!err) {
+                if (err) {
+                    consoleLog(err.message);
+                } else {
                     consoleLog("Remaining connections = " + count);
                 }
             });
@@ -140,7 +144,9 @@ const forwardPort = (sourcePort, ip, targetPort, authorized, restart) => {
                         ' tx ' + NumberFormat.format(socket.bytesWritten));
             socket.end();
             server.getConnections((err, count) => {
-                if (!err) {
+                if (err) {
+                    consoleLog(err.message);
+                } else {
                     consoleLog("Remaining connections = " + count);
                 }
             });
