@@ -1,0 +1,151 @@
+const process = require('process');
+const DateFormat = require('moment');
+const Net = require('net');
+const Crypto = require('crypto');
+const Path = require('path');
+const Fs = require('fs');
+const NumberFormat = new Intl.NumberFormat();
+
+const TIMESTAMP = 'YYYY-MM-DD HH:mm:ss.SSS';
+const ZEROES = '000000';
+const instanceId = (ZEROES + Crypto.randomBytes(4).readUIntBE(0, 4) % 10000).slice(-4);
+const IDLE_TIMEOUT = 300 * 1000;
+var stopping = false;
+
+const consoleLog = (message) => {
+    console.log(DateFormat().format(TIMESTAMP)+' ['+instanceId+'] '+message);
+};
+
+const forwardPort = (sourceIp, sourcePort, targetIp, targetPort) => {
+    const connections = new Map();
+    // Setup TCP socket server
+    const server = new Net.Server();
+    server.listen(sourcePort, sourceIp, () => {
+        consoleLog('Forwarding '+sourceIp+":"+sourcePort+' to '+targetIp+':'+targetPort);
+    });
+    // Graceful shutdown
+    const gracefulShutdown = () => {
+        for (const k of connections.keys()) {
+            consoleLog('Stopping '+k);
+            connections.get(k).end();
+        }
+        server.close(() => {
+            consoleLog('Proxy '+sourceIp+":"+sourcePort+' to '+targetIp+':'+targetPort+' stopped');
+        });
+    };
+    process.on('SIGTERM', () => {
+        if (!stopping) {
+            stopping = true;
+            consoleLog('Kill signal detected');
+        }
+        gracefulShutdown();
+    });
+    process.on('SIGINT', () => {
+        if (!stopping) {
+            stopping = true;
+            consoleLog('Control-C detected');
+        }
+        gracefulShutdown();
+    });
+    // Start TCP socket server
+    server.on('connection', (socket) => {
+        // check remote address
+        const remoteIp = socket.remoteAddress;
+        var normal = true;
+        const sessionId = (ZEROES + Crypto.randomBytes(4).readUIntBE(0, 4) % 1000000).slice(-6);
+        const client = Net.createConnection({ port: targetPort, host: targetIp }, () => {
+            connections.set(sessionId, client);
+            consoleLog( 'Session ' + sessionId + ' ' + remoteIp + ' connected to ' + targetIp + ':'+targetPort);
+            server.getConnections((err, count) => {
+                if (err) {
+                    consoleLog(err.message);
+                } else {
+                    consoleLog("Total connections = " + count);
+                }
+            });
+        });
+        client.setTimeout(IDLE_TIMEOUT, () => {
+            consoleLog('Session ' + sessionId + ' timeout');
+            socket.end();
+        });
+        socket.on('data', (data) => {
+            if (normal) client.write(data);
+        });
+        socket.once('end', () => {
+            connections.delete(sessionId);
+            consoleLog('Session '+sessionId+' closed by '+remoteIp);
+            client.end();
+            server.getConnections((err, count) => {
+                if (err) {
+                    consoleLog(err.message);
+                } else {
+                    consoleLog("Remaining connections = " + count);
+                }
+            });
+        });
+        client.on('data', (data) => {
+            if (normal) socket.write(data);
+        });
+        client.once('end', () => {
+            connections.delete(sessionId);
+            consoleLog( 'Session '+sessionId+ ' ' + remoteIp + ' disconnected from ' + targetIp + ':' + targetPort +
+                        ' rx ' + NumberFormat.format(socket.bytesRead) +
+                        ' tx ' + NumberFormat.format(socket.bytesWritten));
+            socket.end();
+            server.getConnections((err, count) => {
+                if (err) {
+                    consoleLog(err.message);
+                } else {
+                    consoleLog("Remaining connections = " + count);
+                }
+            });
+        });
+        // Socket exceptions - most likely to be read timeout or connection reset
+        socket.on('error', (err) => {
+            if ('ECONNRESET' == err.code) {
+                // normal case when user is using Windows
+                consoleLog('Session '+sessionId+' closed by '+remoteIp);
+            } else {
+                consoleLog('Session '+sessionId+' exception ('+remoteIp+') - '+err.code);
+            }
+            normal = false;
+            client.end();
+            socket.end();
+        });
+        client.on('error', (err) => {
+            consoleLog('Exception for port-'+targetPort+' - '+err);
+            normal = false;
+            socket.end();
+            client.end();
+        });
+    });
+}
+
+function main() {
+    const args = process.argv.slice(2);
+    if (args.length == 2) {
+        var source = get_address(args[0]);
+        var target = get_address(args[1]);
+        if (source != null && target != null) {
+            forwardPort(source[0], source[1], target[0], target[1]);
+            return;
+        }
+    }
+    console.log("Usage: node port-forward.js source_ip:port target_ip:port");
+}
+
+function get_address(ip) {
+    const colon = ip.indexOf(':');
+    if (colon > 2) {
+        var result = [];
+        result.push(ip.substring(0, colon));
+        const port = ip.substring(colon+1);
+        if (!isNaN(port)) {
+            result.push(parseInt(port));
+            return result;
+        }
+    }
+    return null;
+}
+
+main()

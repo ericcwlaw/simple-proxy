@@ -47,6 +47,16 @@ cd simple-proxy
 npm install moment
 ```
 
+## Port-Forward utility
+
+A convenient port-forward utility is derived from the simple-proxy app.
+
+The port-forward utility is a command line tool. You can run it like this:
+
+```
+node port-forward.js source_ip:port target_ip:port
+```
+
 Hope you enjoy this utility for your projects.
 
-8/2021
+11/2021
