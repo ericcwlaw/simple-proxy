@@ -62,8 +62,3 @@ node port-forward.js source_ip:port target_ip:port
 ## Idle disconnect timer
 
 The system has an idle disconnect timeout value of 30 minutes, you may adjust it according to your use cases.
-
-
-Hope you enjoy this utility for your projects.
-
-11/2021
