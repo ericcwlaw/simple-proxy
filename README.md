@@ -44,7 +44,7 @@ Please install the moment time utility before you start the utility.
 
 ```
 cd simple-proxy
-npm install moment
+npm install
 ```
 
 ## Port-Forward utility
