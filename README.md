@@ -50,12 +50,19 @@ npm install moment
 ## Port-Forward utility
 
 A convenient port-forward utility is derived from the simple-proxy app.
+This port-forward utility is particularly useful when using VMs in your laptop.
+It allows you to reach the VM's applications (docker/kubernetes, etc.) from the host OS.
 
 The port-forward utility is a command line tool. You can run it like this:
 
 ```
 node port-forward.js source_ip:port target_ip:port
 ```
+
+## Idle disconnect timer
+
+The system has an idle disconnect timeout value of 30 minutes, you may adjust it according to your use cases.
+
 
 Hope you enjoy this utility for your projects.
 

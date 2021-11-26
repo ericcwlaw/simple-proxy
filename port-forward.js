@@ -7,7 +7,7 @@ const NumberFormat = new Intl.NumberFormat();
 const TIMESTAMP = 'YYYY-MM-DD HH:mm:ss.SSS';
 const ZEROES = '000000';
 const instanceId = (ZEROES + Crypto.randomBytes(4).readUIntBE(0, 4) % 10000).slice(-4);
-const IDLE_TIMEOUT = 300 * 1000;
+const IDLE_TIMEOUT = 1800 * 1000;   // 30 minutes
 var stopping = false;
 
 const consoleLog = (message) => {

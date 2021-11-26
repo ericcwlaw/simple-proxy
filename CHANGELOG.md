@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-The "port forward" utility is derived from the Simple Proxy app.
+The "port forward" utility is derived from the Simple Proxy app
 
 ### Removed
 
@@ -18,7 +18,7 @@ N/A
 
 ### Changed
 
-N/A
+Set idle disconnect timer to 30 minutes
 
 ---
 ## Version 1.1.0, 8/5/2021
