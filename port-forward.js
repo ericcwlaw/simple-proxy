@@ -2,8 +2,6 @@ const process = require('process');
 const DateFormat = require('moment');
 const Net = require('net');
 const Crypto = require('crypto');
-const Path = require('path');
-const Fs = require('fs');
 const NumberFormat = new Intl.NumberFormat();
 
 const TIMESTAMP = 'YYYY-MM-DD HH:mm:ss.SSS';
