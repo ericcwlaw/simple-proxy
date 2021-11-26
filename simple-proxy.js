@@ -6,7 +6,7 @@ const Path = require('path');
 const Fs = require('fs');
 const NumberFormat = new Intl.NumberFormat();
 
-const APP_NAME = 'Simple Proxy v1.0.0';
+const APP_NAME = 'Simple Proxy v1.1.1';
 const TIMESTAMP = 'YYYY-MM-DD HH:mm:ss.SSS';
 const ZEROES = '000000';
 const instanceId = (ZEROES + Crypto.randomBytes(4).readUIntBE(0, 4) % 10000).slice(-4);
