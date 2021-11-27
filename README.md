@@ -58,6 +58,8 @@ The port-forward utility is a command line tool. You can run it like this:
 ```
 node port-forward.js source_ip:port target_ip:port
 ```
+To listen to all IP addresses of the host, you may use 0.0.0.0 as the source_ip
+
 
 ## Idle disconnect timer
 
