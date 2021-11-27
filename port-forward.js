@@ -133,7 +133,7 @@ function main() {
 }
 
 function get_address(ip) {
-    const colon = ip.indexOf(':');
+    const colon = ip.lastIndexOf(':');
     if (colon > 2) {
         var result = [];
         result.push(ip.substring(0, colon));
