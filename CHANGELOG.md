@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-Forward source IP address to target
+N/A
 
 ### Removed
 
@@ -18,7 +18,7 @@ N/A
 
 ### Changed
 
-N/A
+Minor refactoring
 
 ---
 ## Version 1.1.1, 11/25/2021
