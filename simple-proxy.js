@@ -6,7 +6,7 @@ const Path = require('path');
 const Fs = require('fs');
 const NumberFormat = new Intl.NumberFormat();
 
-const APP_NAME = 'Simple Proxy v1.1.1';
+const APP_NAME = 'Simple Proxy v1.1.2';
 const TIMESTAMP = 'YYYY-MM-DD HH:mm:ss.SSS';
 const ZEROES = '000000';
 const instanceId = (ZEROES + Crypto.randomBytes(4).readUIntBE(0, 4) % 10000).slice(-4);
@@ -62,12 +62,12 @@ const isAuthorized = (remoteIp, authorized) => {
     return false;
 }
 
-const forwardPort = (sourcePort, ip, targetPort, authorized, restart) => {
+const forwardPort = (sourcePort, targetIp, targetPort, authorized, restart) => {
     const connections = new Map();
     // Setup TCP socket server
     const server = new Net.Server();
     server.listen(sourcePort, '0.0.0.0', () => {
-        consoleLog('Forwarding port-'+sourcePort+' to '+ip+':'+targetPort);
+        consoleLog('Forwarding port-'+sourcePort+' to '+targetIp+':'+targetPort);
     });
     // Graceful shutdown
     const gracefulShutdown = () => {
@@ -104,9 +104,9 @@ const forwardPort = (sourcePort, ip, targetPort, authorized, restart) => {
         }
         var normal = true;
         const sessionId = (ZEROES + Crypto.randomBytes(4).readUIntBE(0, 4) % 1000000).slice(-6);
-        const client = Net.createConnection({ port: targetPort, host: ip }, () => {
+        const client = Net.createConnection(options = {port: targetPort, host: targetIp}, () => {
             connections.set(sessionId, client);
-            consoleLog( 'Session ' + sessionId + ' ' + remoteIp + ' connected to ' + ip + ':'+targetPort);
+            consoleLog( 'Session ' + sessionId + ' ' + remoteIp + ' connected to ' + targetIp + ':'+targetPort);
             server.getConnections((err, count) => {
                 if (err) {
                     consoleLog(err.message);
@@ -139,7 +139,7 @@ const forwardPort = (sourcePort, ip, targetPort, authorized, restart) => {
         });
         client.once('end', () => {
             connections.delete(sessionId);
-            consoleLog( 'Session '+sessionId+ ' ' + remoteIp + ' disconnected from ' + ip + ':' + targetPort +
+            consoleLog( 'Session '+sessionId+ ' ' + remoteIp + ' disconnected from ' + targetIp + ':' + targetPort +
                         ' rx ' + NumberFormat.format(socket.bytesRead) +
                         ' tx ' + NumberFormat.format(socket.bytesWritten));
             socket.end();
@@ -200,12 +200,12 @@ async function main() {
                 consoleLog('Invalid proxy-config.json');
             } else {
                 // Obtain dynamic IP address - this assumes we are using multipass and the VM is called "main"
-                const [valid, result] = await getVmIpAddress(command, tag, index);
+                const [valid, targetIp] = await getVmIpAddress(command, tag, index);
                 if (!valid) {
-                    consoleLog('Unable to obtain target IP address - '+result);
+                    consoleLog('Unable to obtain target IP address - '+targetIp);
                 } else {
                     for (i in source_ports) {
-                        forwardPort(source_ports[i], result, target_ports[i], authorized, restart);
+                        forwardPort(source_ports[i], targetIp, target_ports[i], authorized, restart);
                     }
                 }
             }
