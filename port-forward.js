@@ -51,7 +51,7 @@ const forwardPort = (sourceIp, sourcePort, targetIp, targetPort) => {
         const remoteIp = socket.remoteAddress;
         var normal = true;
         const sessionId = (ZEROES + Crypto.randomBytes(4).readUIntBE(0, 4) % 1000000).slice(-6);
-        const client = Net.createConnection(options = {port: targetPort, host: targetIp}, () => {
+        const client = Net.connect({port: targetPort, host: targetIp}, () => {
             connections.set(sessionId, client);
             consoleLog( 'Session ' + sessionId + ' ' + remoteIp + ' connected to ' + targetIp + ':'+targetPort);
             server.getConnections((err, count) => {
