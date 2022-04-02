@@ -1,7 +1,6 @@
 const Shell = require('child_process');
 const DateFormat = require('moment');
 const Net = require('net');
-const RawSocket = require('raw-socket');
 const Crypto = require('crypto');
 const Path = require('path');
 const Fs = require('fs');
