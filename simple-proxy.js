@@ -17,8 +17,8 @@ const consoleLog = (message) => {
 
 const getLocalTimestamp = () => {
     const d = new Date();
-    const now = new Date(d.getTime() - d.getTimezoneOffset() * 60 * 1000).toISOString();
-    return now.replace('T', ' ').replace('Z', '');
+    const GMT2Local = new Date(d.getTime() - d.getTimezoneOffset() * 60 * 1000).toISOString();
+    return GMT2Local.replace('T', ' ').replace('Z', '');
 }
 
 async function portReady(host, port) {
