@@ -1,21 +1,25 @@
 const Shell = require('child_process');
-const DateFormat = require('moment');
 const Net = require('net');
 const Crypto = require('crypto');
 const Path = require('path');
 const Fs = require('fs');
 const NumberFormat = new Intl.NumberFormat();
 
-const APP_NAME = 'Simple Proxy v1.1.2';
-const TIMESTAMP = 'YYYY-MM-DD HH:mm:ss.SSS';
+const APP_NAME = 'Simple Proxy v1.1.3';
 const ZEROES = '000000';
 const instanceId = (ZEROES + Crypto.randomBytes(4).readUIntBE(0, 4) % 10000).slice(-4);
 const IDLE_TIMEOUT = 1800 * 1000;   // 30 minutes
 var stopping = false;
 
 const consoleLog = (message) => {
-    console.log(DateFormat().format(TIMESTAMP)+' ['+instanceId+'] '+message);
+    console.log(getLocalTimestamp()+' ['+instanceId+'] '+message);
 };
+
+const getLocalTimestamp = () => {
+    const d = new Date();
+    const now = new Date(d.getTime() - d.getTimezoneOffset() * 60 * 1000).toISOString();
+    return now.replace('T', ' ').replace('Z', '');
+}
 
 async function portReady(host, port) {
     return new Promise((resolve, reject) => {
