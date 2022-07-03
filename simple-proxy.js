@@ -12,7 +12,7 @@ const IDLE_TIMEOUT = 1800 * 1000;   // 30 minutes
 var stopping = false;
 
 const consoleLog = (message) => {
-    console.log(`{getLocalTimestamp()} [{INSTANCE_ID}] {message}`);
+    console.log(`${getLocalTimestamp()} [${INSTANCE_ID}] ${message}`);
 };
 
 const getLocalTimestamp = () => {
@@ -36,7 +36,7 @@ async function portReady(host, port) {
 
 async function getVmIpAddress(command, tag, index) {
     return new Promise((resolve, reject) => {
-        consoleLog(`Resolving target IP adddress using '{command}'`);
+        consoleLog(`Resolving target IP adddress using '${command}'`);
         Shell.exec(command, (error, stdout, stderr) => {
             if (error) {
                 consoleLog(error.message.split('\n')[0]);
@@ -72,16 +72,16 @@ const forwardPort = (sourcePort, targetIp, targetPort, authorized, restart) => {
     // Setup TCP socket server
     const server = new Net.Server();
     server.listen(sourcePort, '0.0.0.0', () => {
-        consoleLog(`Forwarding port-{sourcePort} to {targetIp}:{targetPort}`);
+        consoleLog(`Forwarding port-${sourcePort} to ${targetIp}:${targetPort}`);
     });
     // Graceful shutdown
     const gracefulShutdown = () => {
         for (const k of connections.keys()) {
-            consoleLog(`Stopping {k}`);
+            consoleLog(`Stopping ${k}`);
             connections.get(k).end();
         }
         server.close(() => {
-            consoleLog(`Proxy service port-{targetPort} stopped`);
+            consoleLog(`Proxy service port-${targetPort} stopped`);
         });
     };
     process.on('SIGTERM', () => {
@@ -103,7 +103,7 @@ const forwardPort = (sourcePort, targetIp, targetPort, authorized, restart) => {
         // check remote address
         const remoteIp = socket.remoteAddress;
         if (!isAuthorized(remoteIp, authorized)) {
-            consoleLog(`Unknown caller {remoteIp} connection to {targetPort} rejected`);
+            consoleLog(`Unknown caller ${remoteIp} connection to ${targetPort} rejected`);
             socket.destroy();
             return;
         }
@@ -111,17 +111,17 @@ const forwardPort = (sourcePort, targetIp, targetPort, authorized, restart) => {
         const sessionId = (ZEROES + Crypto.randomBytes(4).readUIntBE(0, 4) % 1000000).slice(-6);
         const client = Net.connect(targetPort, targetIp, () => {
             connections.set(sessionId, client);
-            consoleLog(`Session {sessionId} {remoteIp} connected to {targetIp}:{targetPort}`);
+            consoleLog(`Session ${sessionId} ${remoteIp} connected to ${targetIp}:${targetPort}`);
             server.getConnections((err, count) => {
                 if (err) {
                     consoleLog(err.message);
                 } else {
-                    consoleLog(`Total connections = {count}`);
+                    consoleLog(`Total connections = ${count}`);
                 }
             });
         });
         client.setTimeout(IDLE_TIMEOUT, () => {
-            consoleLog(`Session {sessionId} timeout`);
+            consoleLog(`Session ${sessionId} timeout`);
             socket.end();
         });
         socket.on('data', (data) => {
@@ -129,13 +129,13 @@ const forwardPort = (sourcePort, targetIp, targetPort, authorized, restart) => {
         });
         socket.once('end', () => {
             connections.delete(sessionId);
-            consoleLog(`Session {sessionId} closed by {remoteIp}`);
+            consoleLog(`Session ${sessionId} closed by ${remoteIp}`);
             client.end();
             server.getConnections((err, count) => {
                 if (err) {
                     consoleLog(err.message);
                 } else {
-                    consoleLog(`Remaining connections = {count}`);
+                    consoleLog(`Remaining connections = ${count}`);
                 }
             });
         });
@@ -146,13 +146,13 @@ const forwardPort = (sourcePort, targetIp, targetPort, authorized, restart) => {
             connections.delete(sessionId);
             var bytesRead = NumberFormat.format(socket.bytesRead);
             var bytesWritten = NumberFormat.format(socket.bytesWritten)
-            consoleLog(`Session {sessionId} {remoteIp} disconnected from {targetIp}:{targetPort} rx {bytesRead} tx {bytesWritten}`);
+            consoleLog(`Session ${sessionId} ${remoteIp} disconnected from ${targetIp}:${targetPort} rx ${bytesRead} tx ${bytesWritten}`);
             socket.end();
             server.getConnections((err, count) => {
                 if (err) {
                     consoleLog(err.message);
                 } else {
-                    consoleLog(`Remaining connections = {count}`);
+                    consoleLog(`Remaining connections = ${count}`);
                 }
             });
         });
@@ -160,20 +160,20 @@ const forwardPort = (sourcePort, targetIp, targetPort, authorized, restart) => {
         socket.on('error', (err) => {
             if ('ECONNRESET' == err.code) {
                 // normal case when user is using Windows
-                consoleLog(`Session {sessionId} closed by {remoteIp}`);
+                consoleLog(`Session ${sessionId} closed by ${remoteIp}`);
             } else {
-                consoleLog(`Session {sessionId} exception ({remoteIp}) - {err.code}`);
+                consoleLog(`Session ${sessionId} exception (${remoteIp}) - ${err.code}`);
             }
             normal = false;
             client.end();
             socket.end();
         });
         client.on('error', (err) => {
-            consoleLog(`Exception for port-{targetPort} - {err}`);
+            consoleLog(`Exception for port-${targetPort} - ${err}`);
             // Caution: the error message may depend on locale and language
             if (err.message.startsWith('connect ETIMEDOUT') && targetPort == restart) {
                 // Let process manager to restart this app
-                consoleLog(`Stopping application because port-{targetPort} does not respond`);
+                consoleLog(`Stopping application because port-${targetPort} does not respond`);
                 process.exit(1);
             }
             normal = false;
@@ -186,7 +186,7 @@ const forwardPort = (sourcePort, targetIp, targetPort, authorized, restart) => {
 async function main() {
     var fileName = Path.resolve(__dirname, 'proxy-config.json');
     consoleLog(APP_NAME);
-    consoleLog(`Loading config from {fileName}`);
+    consoleLog(`Loading config from ${fileName}`);
     if (Fs.existsSync(fileName)) {
         const fd = Fs.openSync(fileName);
         const text = Fs.readFileSync(fd, 'utf-8');
@@ -197,7 +197,7 @@ async function main() {
         const index = json['discovery']['index'];
         const authorized = json['authorized'];
         const restart = json['restart'];
-        consoleLog("Authorized users "+JSON.stringify(authorized));
+        consoleLog(`Authorized users ${JSON.stringify(authorized)}`);
         const source_ports = json['source_ports'];
         const target_ports = json['target_ports'];
         if (command && tag && index > -1 && source_ports && target_ports) {
@@ -207,7 +207,7 @@ async function main() {
                 // Obtain dynamic IP address - this assumes we are using multipass and the VM is called "main"
                 const [valid, targetIp] = await getVmIpAddress(command, tag, index);
                 if (!valid) {
-                    consoleLog(`Unable to obtain target IP address - {targetIp}`);
+                    consoleLog(`Unable to obtain target IP address - ${targetIp}`);
                 } else {
                     for (i in source_ports) {
                         forwardPort(source_ports[i], targetIp, target_ports[i], authorized, restart);

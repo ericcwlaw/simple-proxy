@@ -6,29 +6,35 @@ const NumberFormat = new Intl.NumberFormat();
 
 const TIMESTAMP = 'YYYY-MM-DD HH:mm:ss.SSS';
 const ZEROES = '000000';
-const instanceId = (ZEROES + Crypto.randomBytes(4).readUIntBE(0, 4) % 10000).slice(-4);
+const INSTANCE_ID = (ZEROES + Crypto.randomBytes(4).readUIntBE(0, 4) % 10000).slice(-4);
 const IDLE_TIMEOUT = 1800 * 1000;   // 30 minutes
 var stopping = false;
 
 const consoleLog = (message) => {
-    console.log(DateFormat().format(TIMESTAMP)+' ['+instanceId+'] '+message);
+    console.log(`${getLocalTimestamp()} [${INSTANCE_ID}] ${message}`);
 };
+
+const getLocalTimestamp = () => {
+    const d = new Date();
+    const UTC2Local = new Date(d.getTime() - d.getTimezoneOffset() * 60 * 1000).toISOString();
+    return UTC2Local.replace('T', ' ').replace('Z', '');
+}
 
 const forwardPort = (sourceIp, sourcePort, targetIp, targetPort) => {
     const connections = new Map();
     // Setup TCP socket server
     const server = new Net.Server();
     server.listen(sourcePort, sourceIp, () => {
-        consoleLog('Forwarding '+sourceIp+":"+sourcePort+' to '+targetIp+':'+targetPort);
+        consoleLog(`Forwarding ${sourceIp}:${sourcePort} to ${targetIp}:${targetPort}`);
     });
     // Graceful shutdown
     const gracefulShutdown = () => {
         for (const k of connections.keys()) {
-            consoleLog('Stopping '+k);
+            consoleLog(`Stopping ${k}`);
             connections.get(k).end();
         }
         server.close(() => {
-            consoleLog('Proxy '+sourceIp+":"+sourcePort+' to '+targetIp+':'+targetPort+' stopped');
+            consoleLog(`Proxy ${sourceIp}:${sourcePort} to ${targetIp}:${targetPort} stopped`);
         });
     };
     process.on('SIGTERM', () => {
@@ -53,17 +59,17 @@ const forwardPort = (sourceIp, sourcePort, targetIp, targetPort) => {
         const sessionId = (ZEROES + Crypto.randomBytes(4).readUIntBE(0, 4) % 1000000).slice(-6);
         const client = Net.connect(targetPort, targetIp, () => {
             connections.set(sessionId, client);
-            consoleLog( 'Session ' + sessionId + ' ' + remoteIp + ' connected to ' + targetIp + ':'+targetPort);
+            consoleLog(`Session ${sessionId} ${remoteIp} connected to ${targetIp}:${targetPort}`);
             server.getConnections((err, count) => {
                 if (err) {
                     consoleLog(err.message);
                 } else {
-                    consoleLog("Total connections = " + count);
+                    consoleLog(`Total connections = ${count}`);
                 }
             });
         });
         client.setTimeout(IDLE_TIMEOUT, () => {
-            consoleLog('Session ' + sessionId + ' timeout');
+            consoleLog(`Session ${sessionId} timeout`);
             socket.end();
         });
         socket.on('data', (data) => {
@@ -71,13 +77,13 @@ const forwardPort = (sourceIp, sourcePort, targetIp, targetPort) => {
         });
         socket.once('end', () => {
             connections.delete(sessionId);
-            consoleLog('Session '+sessionId+' closed by '+remoteIp);
+            consoleLog(`Session ${sessionId} closed by ${remoteIp}`);
             client.end();
             server.getConnections((err, count) => {
                 if (err) {
                     consoleLog(err.message);
                 } else {
-                    consoleLog("Remaining connections = " + count);
+                    consoleLog(`Remaining connections = ${count}`);
                 }
             });
         });
@@ -86,15 +92,15 @@ const forwardPort = (sourceIp, sourcePort, targetIp, targetPort) => {
         });
         client.once('end', () => {
             connections.delete(sessionId);
-            consoleLog( 'Session '+sessionId+ ' ' + remoteIp + ' disconnected from ' + targetIp + ':' + targetPort +
-                        ' rx ' + NumberFormat.format(socket.bytesRead) +
-                        ' tx ' + NumberFormat.format(socket.bytesWritten));
+            var bytesRead = NumberFormat.format(socket.bytesRead);
+            var bytesWritten = NumberFormat.format(socket.bytesWritten)
+            consoleLog(`Session ${sessionId} ${remoteIp} disconnected from ${targetIp}:${targetPort} rx ${bytesRead} tx ${bytesWritten}`);
             socket.end();
             server.getConnections((err, count) => {
                 if (err) {
                     consoleLog(err.message);
                 } else {
-                    consoleLog("Remaining connections = " + count);
+                    consoleLog(`Remaining connections = ${count}`);
                 }
             });
         });
@@ -102,16 +108,16 @@ const forwardPort = (sourceIp, sourcePort, targetIp, targetPort) => {
         socket.on('error', (err) => {
             if ('ECONNRESET' == err.code) {
                 // normal case when user is using Windows
-                consoleLog('Session '+sessionId+' closed by '+remoteIp);
+                consoleLog(`Session ${sessionId} closed by ${remoteIp}`);
             } else {
-                consoleLog('Session '+sessionId+' exception ('+remoteIp+') - '+err.code);
+                consoleLog(`Session ${sessionId} exception (${remoteIp}) - ${err.code}`);
             }
             normal = false;
             client.end();
             socket.end();
         });
         client.on('error', (err) => {
-            consoleLog('Exception for port-'+targetPort+' - '+err);
+            consoleLog(`Exception for port-${targetPort} - ${err}`);
             normal = false;
             socket.end();
             client.end();
