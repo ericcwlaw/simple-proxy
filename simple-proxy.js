@@ -146,7 +146,7 @@ const forwardPort = (sourcePort, targetIp, targetPort, authorized, restart) => {
             connections.delete(sessionId);
             var bytesRead = NumberFormat.format(socket.bytesRead);
             var bytesWritten = NumberFormat.format(socket.bytesWritten)
-            consoleLog(`Session ${sessionId} ${remoteIp} disconnected from ${targetIp}:${targetPort} rx ${bytesRead} tx ${bytesWritten}`);
+            consoleLog(`Session ${sessionId} ${remoteIp} disconnected from ${targetIp}:${targetPort} rx ${bytesRead} tx ${bytesWritten} bytes`);
             socket.end();
             server.getConnections((err, count) => {
                 if (err) {
