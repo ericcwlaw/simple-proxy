@@ -36,7 +36,7 @@ async function portReady(host, port) {
 
 async function getVmIpAddress(command, tag, index) {
     return new Promise((resolve, reject) => {
-        consoleLog(`Resolving target IP adddress using '${command}'`);
+        consoleLog(`Resolving target IP adddress using command: "${command} (${tag})", index: ${index}`);
         Shell.exec(command, (error, stdout, stderr) => {
             if (error) {
                 consoleLog(error.message.split('\n')[0]);
