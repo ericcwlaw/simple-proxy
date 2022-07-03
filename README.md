@@ -21,6 +21,13 @@ The IP discovery command, source and target ports are configurable using a JSON 
 }
 ```
 
+In case you want to bypass and use the proxy to detect hyper-v VM in Windows directly, you can replace proxy-config.json with proxy-config-hyperv.json.
+
+There are 2 sample proxy config JSON files:
+
+1. proxy-config-multipass.json
+2. proxy-config-hyperv.json
+
 ## SSH security
 
 If you use this to expose your guest VM to the Internet, make sure you use certificate authentication and disable password authentication. You should also use SSH certificate of 4,096 bits for security reason.

@@ -34,14 +34,14 @@ async function portReady(host, port) {
     });
 };
 
-async function getVmIpAddress(command, key, index) {
+async function getVmIpAddress(command, tag, index) {
     return new Promise((resolve, reject) => {
         Shell.exec(command, (error, stdout, stderr) => {
             if (error) {
                 consoleLog(error.message.split('\n')[0]);
             } 
             if (stdout) {
-                var ip = stdout.split('\n').filter(v => v.toString().trim().startsWith(key+' '))[0].trim().split(' ').filter(v => v.length > 0)[index];
+                var ip = stdout.split('\n').filter(v => v.toString().trim().startsWith(tag))[0].trim().split(' ').filter(v => v.length > 0)[index];                
                 resolve([true, ip]);
             } else {
                 resolve([false, stderr.split('\n')[0]]);
@@ -199,7 +199,7 @@ async function main() {
         consoleLog("Authorized users "+JSON.stringify(authorized));
         const source_ports = json['source_ports'];
         const target_ports = json['target_ports'];
-        if (command && tag && index && source_ports && target_ports) {
+        if (command && tag && index > -1 && source_ports && target_ports) {
             if (source_ports.length != target_ports.length) {
                 consoleLog('Invalid proxy-config.json');
             } else {
