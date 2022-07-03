@@ -5,7 +5,7 @@ const Path = require('path');
 const Fs = require('fs');
 const NumberFormat = new Intl.NumberFormat();
 
-const APP_NAME = 'Simple Proxy v1.1.3';
+const APP_NAME = 'Simple Proxy v1.2.0';
 const ZEROES = '000000';
 const INSTANCE_ID = (ZEROES + Crypto.randomBytes(4).readUIntBE(0, 4) % 10000).slice(-4);
 const IDLE_TIMEOUT = 1800 * 1000;   // 30 minutes
