@@ -1,10 +1,8 @@
 const process = require('process');
-const DateFormat = require('moment');
 const Net = require('net');
 const Crypto = require('crypto');
 const NumberFormat = new Intl.NumberFormat();
 
-const TIMESTAMP = 'YYYY-MM-DD HH:mm:ss.SSS';
 const ZEROES = '000000';
 const INSTANCE_ID = (ZEROES + Crypto.randomBytes(4).readUIntBE(0, 4) % 10000).slice(-4);
 const IDLE_TIMEOUT = 1800 * 1000;   // 30 minutes
