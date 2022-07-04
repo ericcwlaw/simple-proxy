@@ -21,12 +21,14 @@ The IP discovery command, source and target ports are configurable using a JSON 
 }
 ```
 
-In case you want the proxy to detect hyper-v VM in Windows directly, you can replace proxy-config.json with proxy-config-hyperv.json.
+If you want the proxy to detect hyper-v VM in Windows directly, you can replace proxy-config.json with proxy-config-hyperv.json.
 
-There are 2 sample proxy config JSON files:
+There are two sample proxy config JSON files:
 
 1. proxy-config-multipass.json
 2. proxy-config-hyperv.json
+
+You can adjust the config file to fit your use case.
 
 ## SSH security
 
