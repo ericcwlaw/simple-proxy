@@ -66,6 +66,13 @@ const forwardPort = (sourcePort, targetIp, targetPort, authorized, restart) => {
     server.listen(sourcePort, '0.0.0.0', () => {
         consoleLog(`Forwarding port-${sourcePort} to ${targetIp}:${targetPort}`);
     });
+    server.on('error', (e) => {
+        if ('EADDRINUSE' == e.code) {
+            consoleLog(`Port ${sourcePort} is already used`);
+        } else {
+            consoleLog(`${e}`);
+        }
+    });
     // Graceful shutdown
     const gracefulShutdown = () => {
         for (const k of connections.keys()) {

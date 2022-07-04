@@ -25,6 +25,13 @@ const forwardPort = (sourceIp, sourcePort, targetIp, targetPort) => {
     server.listen(sourcePort, sourceIp, () => {
         consoleLog(`Forwarding ${sourceIp}:${sourcePort} to ${targetIp}:${targetPort}`);
     });
+    server.on('error', (e) => {
+        if ('EADDRINUSE' == e.code) {
+            consoleLog(`Port ${sourceIp}:${sourcePort} is already used`);
+        } else {
+            consoleLog(`${e}`);
+        }
+    });    
     // Graceful shutdown
     const gracefulShutdown = () => {
         for (const k of connections.keys()) {
