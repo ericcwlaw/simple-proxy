@@ -21,19 +21,6 @@ const getLocalTimestamp = () => {
     return UTC2Local.replace('T', ' ').replace('Z', '');
 }
 
-async function portReady(host, port) {
-    return new Promise((resolve, reject) => {
-        const client = Net.createConnection({ port: port, host: host }, () => {
-            client.end();
-            resolve(true);
-        });
-        client.on('error', function(err) {
-            client.end();
-            resolve(false);
-        });
-    });
-};
-
 async function getVmIpAddress(command, tag, index) {
     return new Promise((resolve, reject) => {
         consoleLog(`Resolving target IP adddress using command: "${command} (${tag})", index: ${index}`);
@@ -42,8 +29,13 @@ async function getVmIpAddress(command, tag, index) {
                 consoleLog(error.message.split('\n')[0]);
             } 
             if (stdout) {
-                var ip = stdout.split('\n').filter(v => v.toString().trim().startsWith(tag))[0].trim().split(' ').filter(v => v.length > 0)[index];                
-                resolve([true, ip]);
+                var entries = stdout.split('\n').filter(v => v.toString().trim().startsWith(tag));
+                if (entries.length > 0) {
+                    var ip = entries[0].trim().split(' ').filter(v => v.length > 0)[index];                
+                    resolve([true, ip]);
+                } else {
+                    resolve([false, 'Unable to resolve IP address. Is VM started?']);
+                }
             } else {
                 resolve([false, stderr.split('\n')[0]]);
             }
@@ -206,12 +198,12 @@ async function main() {
             } else {
                 // Obtain dynamic IP address - this assumes we are using multipass and the VM is called "main"
                 const [valid, targetIp] = await getVmIpAddress(command, tag, index);
-                if (!valid) {
-                    consoleLog(`Unable to obtain target IP address - ${targetIp}`);
-                } else {
+                if (valid) {
                     for (i in source_ports) {
                         forwardPort(source_ports[i], targetIp, target_ports[i], authorized, restart);
                     }
+                } else {
+                    consoleLog(targetIp);
                 }
             }
         } else {
