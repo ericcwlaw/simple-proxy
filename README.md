@@ -32,9 +32,10 @@ You can adjust the config file to fit your use case.
 
 ## SSH security
 
-If you use this to expose your guest VM to the Internet, make sure you use certificate authentication and disable password authentication. You should also use SSH certificate of 4,096 bits for security reason.
+If you use this to expose your guest VM to the Internet, make sure you use certificate authentication and disable password authentication.
 
-If you are using Multipass, you can replace the original SSH certificate with a 4,096-bit certificate.
+If you are using Multipass, please create a new user and save the public key of the user in the "authorized_keys" file under the ".ssh" folder.
+For security reason, please use certificate with RSA key length of 4,096 bits.
 
 ## Running this utility as a service
 
