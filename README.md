@@ -32,14 +32,14 @@ You can adjust the config file to fit your use case.
 
 ## SSH security
 
-If you use this to expose your guest VM to the Internet, make sure you use certificate authentication and disable password authentication.
+If you expose your guest VM to the Internet, make sure you enforce certificate authentication. i.e. disable SSH login using password.
 
-If you are using Multipass, please create a new user and save the public key of the user in the "authorized_keys" file under the ".ssh" folder.
+Please create a "non-root" user and save the public key of the user in the "authorized_keys" file under the ".ssh" folder.
 For security reason, please use certificate with RSA key length of 4,096 bits.
 
 ## Running this utility as a service
 
-We recommend that you use Node's PM2 process manager to deploy the utility as a service.
+We recommend that you use Node's PM2 process manager or docker-compose to deploy the utility as a service.
 
 It is as simple as:
 
